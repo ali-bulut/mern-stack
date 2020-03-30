@@ -8,7 +8,6 @@ import "./UserItem.css";
 
 const UserItem = props => {
   return (
-    <div>
       <li className="user-item">
           <Card className="user-item__content">
             <Link to={`/${props.id}/places`}>
@@ -25,7 +24,6 @@ const UserItem = props => {
             </Link>
           </Card>
       </li>
-    </div>
   );
 };
 
