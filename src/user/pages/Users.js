@@ -12,9 +12,7 @@ const Users = () => {
         }
     ];
     return (
-        <div>
-            <UsersList items={USERS}/>
-        </div>
+        <UsersList items={USERS}/>
     );
 };
 

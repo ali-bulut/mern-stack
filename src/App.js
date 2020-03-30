@@ -7,10 +7,13 @@ import './App.css';
 //components
 import Users from './user/pages/Users';
 import NewPlace from './places/pages/NewPlace';
+import MainNavigation from './shared/components/Navigation/MainNavigation';
 
 const App = () => {
   return(
     <Router>
+      <MainNavigation />
+      <main>
       <Switch>
       <Route path="/" exact>
         <Users/>
@@ -21,6 +24,7 @@ const App = () => {
       {/* if the url is going to path which is not exist we can redirect the page to / path by using Redirect */}
       <Redirect to="/" />
       </Switch>
+      </main>
     </Router>
   ); 
 }
