@@ -10,6 +10,7 @@ import NewPlace from './places/pages/NewPlace';
 import UserPlaces from './places/pages/UserPlaces';
 import MainNavigation from './shared/components/Navigation/MainNavigation';
 import UpdatePlace from './places/pages/UpdatePlace';
+import Auth from './user/pages/Auth';
 
 const App = () => {
   return(
@@ -28,6 +29,9 @@ const App = () => {
       </Route>
       <Route path="/places/:placeId" exact>
         <UpdatePlace/>
+      </Route>
+      <Route path="/auth" exact>
+        <Auth/>
       </Route>
       {/* if the url is going to path which is not exist we can redirect the page to / path by using Redirect */}
       <Redirect to="/" />
