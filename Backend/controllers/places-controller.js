@@ -1,21 +1,21 @@
-const HttpError = require('../models/http-error');
+const uuid = require('uuid/v4');
+const HttpError = require("../models/http-error");
 
 const DUMMY_PLACES = [
-    {
-      id: "p1",
-      title: "Maiden Tower",
-      description: "One of the most famous place in the world!",
-      imageUrl:
-        "https://upload.wikimedia.org/wikipedia/commons/9/92/Maiden_tower.JPG",
-      address: "Salacak, Üsküdar Salacak Mevkii, 34668 Üsküdar/İstanbul",
-      location: {
-        lat: 41.0211216,
-        lng: 29.0041105
-      },
-      creator: "u1"
-    }
-  ];
-
+  {
+    id: "p1",
+    title: "Maiden Tower",
+    description: "One of the most famous place in the world!",
+    imageUrl:
+      "https://upload.wikimedia.org/wikipedia/commons/9/92/Maiden_tower.JPG",
+    address: "Salacak, Üsküdar Salacak Mevkii, 34668 Üsküdar/İstanbul",
+    location: {
+      lat: 41.0211216,
+      lng: 29.0041105
+    },
+    creator: "u1"
+  }
+];
 
 const getPlaceById = (req, res, next) => {
   const placeId = req.params.pid;
@@ -41,5 +41,22 @@ const getPlaceByUserId = (req, res, next) => {
   res.json({ place: place });
 };
 
-exports.getPlaceById=getPlaceById;
-exports.getPlaceByUserId=getPlaceByUserId;
+const createPlace = (req, res, next) => {
+    const { title, description, coordinates, address, creator } = req.body;
+    const createdPlace={
+        id: uuid(),
+        title,
+        description,
+        location:coordinates,
+        address,
+        creator
+    }
+
+    DUMMY_PLACES.push(createdPlace);
+
+    res.status(201).json({place: createdPlace});
+};
+
+exports.getPlaceById = getPlaceById;
+exports.getPlaceByUserId = getPlaceByUserId;
+exports.createPlace = createPlace;

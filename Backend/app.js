@@ -2,10 +2,19 @@ const express = require("express");
 const bodyParser = require("body-parser");
 
 const placesRoutes = require("./routes/places-routes");
+const HttpError = require('./models/http-error');
 
 const app = express();
 
+//this will convert json data to regular javascript object or array.
+app.use(bodyParser.json());
+
 app.use("/api/places", placesRoutes);
+
+app.use((req,res,next) => {
+    const error = new HttpError('Could not find this path!',404);
+    next(error);
+})
 
 app.use((error,req,res,next)=>{
     if(res.headerSent)
