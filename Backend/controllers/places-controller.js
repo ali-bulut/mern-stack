@@ -1,9 +1,22 @@
 const uuid = require('uuid/v4');
 const HttpError = require("../models/http-error");
 
-const DUMMY_PLACES = [
+let DUMMY_PLACES = [
   {
     id: "p1",
+    title: "Maiden Tower",
+    description: "One of the most famous place in the world!",
+    imageUrl:
+      "https://upload.wikimedia.org/wikipedia/commons/9/92/Maiden_tower.JPG",
+    address: "Salacak, Üsküdar Salacak Mevkii, 34668 Üsküdar/İstanbul",
+    location: {
+      lat: 41.0211216,
+      lng: 29.0041105
+    },
+    creator: "u1"
+  },
+  {
+    id: "p2",
     title: "Maiden Tower",
     description: "One of the most famous place in the world!",
     imageUrl:
@@ -29,16 +42,16 @@ const getPlaceById = (req, res, next) => {
   res.json({ place: place });
 };
 
-const getPlaceByUserId = (req, res, next) => {
+const getPlacesByUserId = (req, res, next) => {
   const userId = req.params.uid;
-  const place = DUMMY_PLACES.find(p => p.creator === userId);
+  const places = DUMMY_PLACES.filter(p => p.creator === userId);
 
-  if (!place)
+  if (!places || places.length === 0)
     return next(
-      new HttpError("Could not find a place for the provided id!", 404)
+      new HttpError("Could not find any places for the provided id!", 404)
     );
 
-  res.json({ place: place });
+  res.json({ places });
 };
 
 const createPlace = (req, res, next) => {
@@ -57,6 +70,30 @@ const createPlace = (req, res, next) => {
     res.status(201).json({place: createdPlace});
 };
 
+const updatePlaceById = (req,res,next) => {
+    const { title, description } = req.body;
+    const placeId=req.params.pid;
+
+    const updatedPlace={...DUMMY_PLACES.find(p=>p.id===placeId)};
+    const placeIndex=DUMMY_PLACES.findIndex(p=>p.id===placeId);
+
+    updatedPlace.title=title;
+    updatedPlace.description=description;
+
+    DUMMY_PLACES[placeIndex]=updatedPlace;
+
+    res.status(200).json({place: updatedPlace});
+
+}
+
+const deletePlaceById = (req,res,next) => {
+    const placeId=req.params.pid;
+    DUMMY_PLACES=DUMMY_PLACES.filter(p => p.id!==placeId);
+    res.status(200).json({message: 'The Place has been deleted!'});
+}
+
 exports.getPlaceById = getPlaceById;
-exports.getPlaceByUserId = getPlaceByUserId;
+exports.getPlacesByUserId = getPlacesByUserId;
 exports.createPlace = createPlace;
+exports.updatePlaceById=updatePlaceById;
+exports.deletePlaceById=deletePlaceById;
