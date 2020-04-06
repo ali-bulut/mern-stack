@@ -1,130 +1,208 @@
-const uuid = require('uuid/v4');
-const {validationResult} = require("express-validator");
+// const uuid = require("uuid/v4");
+const { validationResult } = require("express-validator");
+const mongoose = require("mongoose");
 
 const HttpError = require("../models/http-error");
-const getCoordsForAddress = require('../util/location');
+const Place = require("../models/place");
+const User = require("../models/user");
 
-let DUMMY_PLACES = [
-  {
-    id: "p1",
-    title: "Maiden Tower",
-    description: "One of the most famous place in the world!",
-    imageUrl:
-      "https://upload.wikimedia.org/wikipedia/commons/9/92/Maiden_tower.JPG",
-    address: "Salacak, Üsküdar Salacak Mevkii, 34668 Üsküdar/İstanbul",
-    location: {
-      lat: 41.0211216,
-      lng: 29.0041105
-    },
-    creator: "u1"
-  },
-  {
-    id: "p2",
-    title: "Maiden Tower",
-    description: "One of the most famous place in the world!",
-    imageUrl:
-      "https://upload.wikimedia.org/wikipedia/commons/9/92/Maiden_tower.JPG",
-    address: "Salacak, Üsküdar Salacak Mevkii, 34668 Üsküdar/İstanbul",
-    location: {
-      lat: 41.0211216,
-      lng: 29.0041105
-    },
-    creator: "u1"
-  }
-];
+const getCoordsForAddress = require("../util/location");
 
-const getPlaceById = (req, res, next) => {
+const getPlaceById = async (req, res, next) => {
   const placeId = req.params.pid;
-  const place = DUMMY_PLACES.find(p => p.id === placeId);
+
+  let place;
+  try {
+    place = await Place.findById(placeId);
+  } catch (err) {
+    const error = new HttpError(
+      "Something went wrong, could not find a place!",
+      500
+    );
+    return next(error);
+  }
 
   if (!place)
     return next(
       new HttpError("Could not find a place for the provided id!", 404)
     );
 
-  res.json({ place: place });
+  //by using toObject we can be able to access id from db as string.
+  //_id -> is coming from db as objectId
+  //id -> is also coming from db but as string
+  res.json({ place: place.toObject({ getters: true }) });
 };
 
-const getPlacesByUserId = (req, res, next) => {
+const getPlacesByUserId = async (req, res, next) => {
   const userId = req.params.uid;
-  const places = DUMMY_PLACES.filter(p => p.creator === userId);
+  //   const places = await Place.find(p=>p.creator === userId);
 
-  if (!places || places.length === 0)
+//   let places;
+    let userWithPlaces;
+  try {
+    // places = await Place.find({ creator: userId });
+    userWithPlaces=await User.findById(userId).populate('places');
+  } catch (err) {
+    const error = new HttpError(
+      "Fetching places failed, please try again!",
+      500
+    );
+    return next(error);
+  }
+
+  if (!userWithPlaces.places || userWithPlaces.places.length === 0)
     return next(
       new HttpError("Could not find any places for the provided id!", 404)
     );
 
-  res.json({ places });
+  //because places is array and we cannot reach toObject method directly. So we have to map the array
+  //and should reverse each place.
+  res.json({ places: userWithPlaces.places.map(place => place.toObject({ getters: true })) });
 };
 
 const createPlace = async (req, res, next) => {
+  const errors = validationResult(req);
 
-    const errors = validationResult(req);
+  if (!errors.isEmpty()) {
+    return next(
+      new HttpError("Invalid inputs passed, please check your data!", 422)
+    );
+  }
 
-    if(!errors.isEmpty())
-    {
-        return next(new HttpError('Invalid inputs passed, please check your data!', 422))
-    }
+  const { title, description, address, creator } = req.body;
 
-    const { title, description, address, creator } = req.body;
-
-    let coordinates;
-    try {
+  let coordinates;
+  try {
     coordinates = await getCoordsForAddress(address);
-    } catch (error) {
-        return next(error);
-    }
+  } catch (error) {
+    return next(error);
+  }
 
-    const createdPlace={
-        id: uuid(),
-        title,
-        description,
-        location:coordinates,
-        address,
-        creator
-    }
+  const createdPlace = new Place({
+    title,
+    description,
+    address,
+    location: coordinates,
+    image:
+      "https://upload.wikimedia.org/wikipedia/commons/9/92/Maiden_tower.JPG",
+    creator
+  });
 
-    DUMMY_PLACES.push(createdPlace);
+  let user;
+  try {
+    user = await User.findById(creator);
+  } catch (err) {
+    const error = new HttpError(
+      "Creating place failed, please try again later!",
+      500
+    );
+    return next(error);
+  }
 
-    res.status(201).json({place: createdPlace});
+  if (!user) {
+    return next(new HttpError("Could not find user for provided id!"));
+  }
+
+  try {
+    //usage of transactions (doesnt work!)
+    // const session = await mongoose.startSession();
+    //await session.startTransaction();
+    await createdPlace.save(/*{ session: session }*/);
+
+    user.places.push(createdPlace);
+    await user.save(/*{ session: session }*/);
+
+    //ending of transaction and after that our changes will be added to db.
+    // await session.commitTransaction();
+  } catch (err) {
+    const error = new HttpError(
+      "Creating place failed, please try again!",
+      500
+    );
+    return next(error);
+  }
+
+  res.status(201).json({ place: createdPlace });
 };
 
-const updatePlaceById = (req,res,next) => {
-    const errors = validationResult(req);
+const updatePlaceById = async (req, res, next) => {
+  const errors = validationResult(req);
 
-    if(!errors.isEmpty())
-    {
-        return next(new HttpError('Invalid inputs passed, please check your data!', 422))
-    }
+  if (!errors.isEmpty()) {
+    return next(
+      new HttpError("Invalid inputs passed, please check your data!", 422)
+    );
+  }
 
-    const { title, description } = req.body;
-    const placeId=req.params.pid;
+  const { title, description } = req.body;
+  const placeId = req.params.pid;
 
-    const updatedPlace={...DUMMY_PLACES.find(p=>p.id===placeId)};
-    const placeIndex=DUMMY_PLACES.findIndex(p=>p.id===placeId);
+  let place;
+  try {
+    place = await Place.findById(placeId);
+  } catch (err) {
+    const error = new HttpError(
+      "Something went wrong, could not find a place!",
+      500
+    );
+    return next(error);
+  }
 
-    updatedPlace.title=title;
-    updatedPlace.description=description;
+  place.title = title;
+  place.description = description;
 
-    DUMMY_PLACES[placeIndex]=updatedPlace;
+  try {
+    await place.save();
+  } catch (err) {
+    const error = new HttpError(
+      "Updating place failed, please try again!",
+      500
+    );
+    return next(error);
+  }
 
-    res.status(200).json({place: updatedPlace});
+  res.status(200).json({ place: place.toObject({ getters: true }) });
+};
 
-}
+const deletePlaceById = async (req, res, next) => {
+  const placeId = req.params.pid;
 
-const deletePlaceById = (req,res,next) => {
-    const placeId=req.params.pid;
+  let place;
+  try {
+      //if ref field is exist in Place schema then we can use populate!
+      //by using this we can reach the user schema on place schema.
+      //place.creator.places for example
+    place = await Place.findById(placeId).populate('creator');
+  } catch (err) {
+    const error = new HttpError(
+      "Something went wrong, could not find a place!",
+      500
+    );
+    return next(error);
+  }
 
-    if(!DUMMY_PLACES.find(p=>p.id === placeId)){
-        return next(new HttpError('Could not find a place for that id!', 404))
-    }
+  if(!place){
+      return next(new HttpError('Could not find place for this id', 404));
+  }
 
-    DUMMY_PLACES=DUMMY_PLACES.filter(p => p.id!==placeId);
-    res.status(200).json({message: 'The Place has been deleted!'});
-}
+  try {
+    await place.remove();
+    //by using pull we will delete the placeId in the user schema.
+    place.creator.places.pull(place);
+    await place.creator.save();
+  } catch (err) {
+    const error = new HttpError(
+      "Deleting place failed, please try again!",
+      500
+    );
+    return next(error);
+  }
+
+  res.status(200).json({ message: "The Place has been deleted!" });
+};
 
 exports.getPlaceById = getPlaceById;
 exports.getPlacesByUserId = getPlacesByUserId;
 exports.createPlace = createPlace;
-exports.updatePlaceById=updatePlaceById;
-exports.deletePlaceById=deletePlaceById;
+exports.updatePlaceById = updatePlaceById;
+exports.deletePlaceById = deletePlaceById;
