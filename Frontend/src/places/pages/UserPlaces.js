@@ -1,42 +1,41 @@
-import React from 'react';
-import {useParams} from 'react-router-dom';
+import React, { useEffect, useState } from "react";
+import { useParams } from "react-router-dom";
 
-import PlaceList from '../components/PlaceList';
-
-const DUMMY_PLACES=[
-    {
-        id:'p1',
-        title:'Maiden Tower',
-        description:'One of the most famous place in the world!',
-        imageUrl:'https://upload.wikimedia.org/wikipedia/commons/9/92/Maiden_tower.JPG',
-        address:'Salacak, Üsküdar Salacak Mevkii, 34668 Üsküdar/İstanbul',
-        location:{
-            lat: 41.0211216,
-            lng: 29.0041105
-        },
-        creator:'u1'
-    },
-    {
-        id:'p2',
-        title:'Maiden Tower',
-        description:'One of the most famous place in the world!',
-        imageUrl:'https://upload.wikimedia.org/wikipedia/commons/9/92/Maiden_tower.JPG',
-        address:'Salacak, Üsküdar Salacak Mevkii, 34668 Üsküdar/İstanbul',
-        location:{
-            lat: 41.0211216,
-            lng: 29.0041105
-        },
-        creator:'u2'
-    }
-]
+import PlaceList from "../components/PlaceList";
+import ErrorModal from "../../shared/components/UIElements/ErrorModal";
+import LoadingSpinner from "../../shared/components/UIElements/LoadingSpinner";
+import { useHttpClient } from "../../shared/hooks/http-hook";
 
 const UserPlaces = () => {
-    //by using useParams hook, we are able to reach userId route which comes from the url.
-    const userId = useParams().userId;
-    const loadedPlaces=DUMMY_PLACES.filter(place=>place.creator === userId);
-    return (
-        <PlaceList items={loadedPlaces}/>
-    );
+  const [loadedPlaces, setLoadedPlaces] = useState();
+  const { isLoading, error, sendRequest, clearError } = useHttpClient();
+
+  //by using useParams hook, we are able to reach userId route which comes from the url.
+  const userId = useParams().userId;
+
+  useEffect(() => {
+    const fetchPlaces = async () => {
+      try {
+        const responseData = await sendRequest(
+          `http://localhost:5000/api/places/user/${userId}`
+        );
+        setLoadedPlaces(responseData.places);
+      } catch (err) {}
+    };
+    fetchPlaces();
+  }, [sendRequest, userId]);
+
+  return (
+    <React.Fragment>
+      <ErrorModal error={error} onClear={clearError} />
+      {isLoading && (
+        <div className="center">
+          <LoadingSpinner />
+        </div>
+      )}
+      {!isLoading && loadedPlaces && <PlaceList items={loadedPlaces} />}
+    </React.Fragment>
+  );
 };
 
 export default UserPlaces;
