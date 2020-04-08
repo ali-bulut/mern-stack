@@ -1,5 +1,4 @@
 import React, { useState, useContext } from "react";
-
 import "./Auth.css";
 import Card from "../../shared/components/UIElements/Card";
 import Input from "../../shared/components/FormElements/Input";
@@ -68,7 +67,7 @@ const Auth = () => {
 
   const authSubmitHandler = async event => {
     event.preventDefault();
-    console.log(formState.inputs);
+
     if (isLoginMode) {
       try {
         const responseData = await sendRequest(
@@ -84,15 +83,23 @@ const Auth = () => {
       } catch (err) {}
     } else {
       try {
+        const formData = new FormData();
+        formData.append('email',formState.inputs.email.value);
+        formData.append('name',formState.inputs.name.value);
+        formData.append('password',formState.inputs.password.value);
+        //image is a key that is coming from users-routes -> fileUpload.single('image'); 
+        formData.append('image', formState.inputs.image.value)
         const responseData = await sendRequest(
           "http://localhost:5000/api/users/signup",
           "POST",
-          JSON.stringify({
-            name: formState.inputs.name.value,
-            email: formState.inputs.email.value,
-            password: formState.inputs.password.value
-          }),
-          { "Content-Type": "application/json" }
+          //instead of using json we use here formData in order to pass binary data which is image file 
+          formData
+          // JSON.stringify({
+          //   name: formState.inputs.name.value,
+          //   email: formState.inputs.email.value,
+          //   password: formState.inputs.password.value
+          // }),
+          // { "Content-Type": "application/json" }
         );
         auth.login(responseData.user.id);
       } catch (err) {
@@ -121,7 +128,7 @@ const Auth = () => {
             />
           )}
           {/* we use inputHandler because it's nearly same with our expectation */}
-          {!isLoginMode && <ImageUpload id="image" center onInput={inputHandler} />}
+          {!isLoginMode && <ImageUpload id="image" center onInput={inputHandler} errorText="Please provide an image!" />}
           <Input
             element="input"
             id="email"

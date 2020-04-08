@@ -7,7 +7,7 @@ import './NavLinks.css';
 
 const NavLinks = () => {
     const [loadedUsers, setLoadedUsers] = useState();
-    const { isLoading, error, sendRequest, clearError } = useHttpClient();
+    const { sendRequest } = useHttpClient();
 
     useEffect(() => {
         const fetchUsers = async () => {
@@ -33,7 +33,7 @@ const NavLinks = () => {
                 {auth.isLoggedIn &&<li style={{marginRight: 25 + 'px'}}>
                     <NavLink to="/places/new">Add Place</NavLink>
                 </li>}
-                {auth.isLoggedIn &&<li style={{marginRight: 25 + 'px'}}>
+                {auth.isLoggedIn && <li style={{marginRight: 25 + 'px'}}>
                     <span>Current User : {loadedUsers.filter(user => user.id === auth.userId).map(user => user.name)}</span>
                 </li>}
                 {!auth.isLoggedIn &&<li style={{marginRight: 25 + 'px'}}>

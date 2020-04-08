@@ -1,6 +1,8 @@
 const express = require("express");
 const bodyParser = require("body-parser");
 const mongoose=require('mongoose');
+const fs = require('fs');
+const path = require('path');
 
 const placesRoutes = require("./routes/places-routes");
 const usersRoutes = require("./routes/users-routes");
@@ -11,6 +13,10 @@ const app = express();
 
 //this will convert json data to regular javascript object or array.
 app.use(bodyParser.json());
+
+//if there is a request to /uploads/images we open the uploads and images folders to the public!
+//if we dont use that we cant access from the client to these folders so also images.
+app.use('/uploads/images', express.static(path.join('uploads', 'images')))
 
 //CORS 
 app.use((req,res,next) => {
@@ -30,6 +36,12 @@ app.use((req,res,next) => {
 })
 
 app.use((error,req,res,next)=>{
+    //if there is an error we will delete the image file. 
+    if(req.file){
+        fs.unlink(req.file.path, (err) => {
+            console.log(err);
+        });
+    }
     if(res.headerSent)
         return next(error);
 

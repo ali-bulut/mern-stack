@@ -10,6 +10,7 @@ const {
   updatePlaceById,
   deletePlaceById
 } = require("../controllers/places-controller");
+const fileUpload = require('../middlewares/file-upload');
 
 router.get("/:pid", getPlaceById);
 
@@ -17,6 +18,7 @@ router.get("/user/:uid", getPlacesByUserId);
 
 router.post(
   "/",
+  fileUpload.single('image'),
   [
     check("title")
     .not()

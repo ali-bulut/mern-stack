@@ -1,6 +1,7 @@
 // const uuid = require("uuid/v4");
 const { validationResult } = require("express-validator");
 const mongoose = require("mongoose");
+const fs = require('fs');
 
 const HttpError = require("../models/http-error");
 const Place = require("../models/place");
@@ -83,8 +84,7 @@ const createPlace = async (req, res, next) => {
     description,
     address,
     location: coordinates,
-    image:
-      "https://upload.wikimedia.org/wikipedia/commons/9/92/Maiden_tower.JPG",
+    image: req.file.path,
     creator
   });
 
@@ -185,6 +185,8 @@ const deletePlaceById = async (req, res, next) => {
       return next(new HttpError('Could not find place for this id', 404));
   }
 
+  const imagePath=place.image;
+
   try {
     await place.remove();
     //by using pull we will delete the placeId in the user schema.
@@ -197,6 +199,10 @@ const deletePlaceById = async (req, res, next) => {
     );
     return next(error);
   }
+
+  fs.unlink(imagePath, (err) => {
+    console.log(err);
+  });
 
   res.status(200).json({ message: "The Place has been deleted!" });
 };
