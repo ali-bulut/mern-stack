@@ -11,7 +11,7 @@ module.exports = (req, res, next) => {
     if (!token) {
       throw new Error("Authentication failed!");
     }
-    const decodedToken = jwt.verify(token, "supersecretkey_dont_share");
+    const decodedToken = jwt.verify(token, process.env.JWT_KEY);
     //we created a variable to the request and the userId is included in this variable.
     //so if we have decodedToken we can allow the user to log in.
     req.userData = {userId: decodedToken.userId}
