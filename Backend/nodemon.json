@@ -1,9 +1,0 @@
-{
-    "env":{
-        "DB_USER":"alibulut",
-        "DB_PASSWORD":"12345a",
-        "DB_NAME":"heroku_vvkglrgl",
-        "GOOGLE_API_KEY":"AIzaSyBW5OgezDiR4dQ2AZY0KNy9WG8kvxFefNM",
-        "JWT_KEY":"supersecretkey_dont_share"
-    }
-}
